@@ -38,7 +38,6 @@ const myParseConfigFileHost: ParseConfigFileHost = {
 };
 
 const configParseResult: ParsedCommandLine = getParsedCommandLineOfConfigFile(CONFIG_FILE, {}, myParseConfigFileHost);
-configParseResult.options;
 
 const targetIndexFile = resolve(CONFIG_FILE, '..', '_index.ts');
 const files = configParseResult.fileNames.slice();
