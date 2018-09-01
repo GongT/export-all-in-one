@@ -1,17 +1,25 @@
 {
 	"name": "@gongt/export-all-in-one",
+	"version": "1.0.1",
+	"description": "write your library with typescript. make all exports available from single entry.",
+	"keywords": [
+		"typescript",
+		"library",
+		"ts",
+		"cli",
+		"ts",
+		"concat"
+	],
 	"scripts": {
 		"watch": "rollup -w -c build/rollup.config.js",
 		"build": "rollup -c build/rollup.config.js",
 		"lint": "tslint -c build/tslint.json 'src'",
 		"prepublish": "rollup -c build/rollup.config.js"
 	},
-	"version": "1.0.0",
-	"description": "",
 	"bin": {
 		"export-all-in-one": "./dist/main.js"
 	},
-	"author": "",
+	"author": "GongT <gongteng524702837@gmail.com>",
 	"license": "MIT",
 	"dependencies": {
 		"source-map-support": "^0.5.9",
