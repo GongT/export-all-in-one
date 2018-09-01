@@ -1,0 +1,37 @@
+{
+	"compileOnSave": true,
+	"compilerOptions": {
+		"module": "commonjs",
+		"target": "esnext",
+		"lib": [
+			"es5",
+			"es6",
+			"es7",
+			"es2015",
+			"es2016",
+			"es2017"
+		],
+		"moduleResolution": "node",
+		"declaration": true,
+		"noEmitOnError": true,
+		"noImplicitThis": true,
+		"noImplicitAny": false,
+		"removeComments": false,
+		"preserveConstEnums": true,
+		"experimentalDecorators": true,
+		"emitDecoratorMetadata": true,
+		"forceConsistentCasingInFileNames": true,
+		"isolatedModules": false,
+		"pretty": false,
+		"sourceMap": true,
+		"inlineSourceMap": false,
+		"inlineSources": false,
+		"jsx": "react",
+		"stripInternal": true,
+		"outDir": "../dist",
+		"rootDir": "./",
+		"baseUrl": ".",
+		"paths": {},
+		"types": []
+	}
+}
