@@ -1,4 +1,4 @@
-import { CONFIG_FILE, PROJECT_ROOT } from './argParse';
+import { CONFIG_FILE } from './argParse';
 import { normalize, resolve } from 'path';
 import { writeFileSync } from 'fs';
 import {
@@ -17,6 +17,8 @@ import {
 	sys,
 } from 'typescript';
 import { relativeToRoot, tokenWalk } from './tokenWalk';
+
+const ignored = /^_|\.test\.ts$/;
 
 const myFormatDiagnosticsHost: FormatDiagnosticsHost = {
 	getCurrentDirectory : sys.getCurrentDirectory,
@@ -58,14 +60,21 @@ for (file of program.getSourceFiles()) {
 	}
 
 	sources.push(`//// - ${relativeToRoot(file.fileName)}`);
+
+	if (ignored.test(file.fileName)) {
+		sources.push(`// ignore by default`);
+		sources.push(``);
+		continue;
+	}
+
 	console.log('\x1B[38;5;14mParsing file: %s...\x1B[0m', file.fileName);
 	forEachChild(file, (node: Node) => {
 		tokenWalk(sources, node, checker);
 	});
-	// checker.getExportsOfModule(file);
+	sources.push(``);
 }
 
 const newFileData = sources.map((node) => {
 	return node;
 }).join('\n');
-writeFileSync(resolve(PROJECT_ROOT, 'index.ts'), newFileData);
+writeFileSync(targetIndexFile, newFileData);

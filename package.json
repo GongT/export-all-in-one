@@ -7,7 +7,6 @@
 		"library",
 		"ts",
 		"cli",
-		"ts",
 		"concat"
 	],
 	"scripts": {
@@ -17,8 +16,9 @@
 		"prepublish": "rollup -c build/rollup.config.js"
 	},
 	"bin": {
-		"export-all-in-one": "./dist/main.js"
+		"export-all-in-one": "./dist/index.js"
 	},
+	"main": "./dist/index.js",
 	"author": "GongT <gongteng524702837@gmail.com>",
 	"license": "MIT",
 	"dependencies": {

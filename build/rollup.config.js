@@ -33,6 +33,7 @@ const mainFile = pkg.main || resolve('dist/main.js');
 const banner = readFileSync(resolve('build/loader.js'), 'utf8');
 
 const commonOutput = {
+	banner: '#!/usr/bin/env node',
 	intro: banner,
 	sourcemap: true,
 	name: pkg.name.replace(/^@/, '').replace(/\//g, '__'),
