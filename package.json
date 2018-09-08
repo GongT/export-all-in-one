@@ -23,7 +23,8 @@
 	"license": "MIT",
 	"dependencies": {
 		"source-map-support": "^0.5.9",
-		"tsconfig-paths": "^3.5.0"
+		"tsconfig-paths": "^3.5.0",
+		"typescript-formatter": "^7.2.2"
 	},
 	"devDependencies": {
 		"@gongt/single-dog": "^1.1.111",

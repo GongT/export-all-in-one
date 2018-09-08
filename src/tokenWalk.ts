@@ -1,5 +1,5 @@
 import { basename, resolve } from 'path';
-import { PROJECT_ROOT } from './argParse';
+import { SOURCE_ROOT } from './argParse';
 import {
 	ClassDeclaration,
 	ExportAssignment,
@@ -129,7 +129,7 @@ function resolveRelate(fileLiteral: StringLiteral) {
 }
 
 export function relativeToRoot(abs: string) {
-	return abs.replace(PROJECT_ROOT, '').replace(/^\//g, '').replace(/\.ts$/, '');
+	return abs.replace(SOURCE_ROOT, '').replace(/^\//g, '').replace(/\.ts$/, '');
 }
 
 function getName(name: Identifier, file: string, big: boolean | string) {

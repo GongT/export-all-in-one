@@ -1,6 +1,5 @@
 import { CONFIG_FILE } from './argParse';
-import { normalize, resolve } from 'path';
-import { writeFileSync } from 'fs';
+import { dirname, normalize, resolve } from 'path';
 import {
 	createCompilerHost,
 	createProgram,
@@ -17,6 +16,8 @@ import {
 	sys,
 } from 'typescript';
 import { relativeToRoot, tokenWalk } from './tokenWalk';
+import { processString } from 'typescript-formatter';
+import { existsSync, unlinkSync, writeFileSync } from 'fs';
 
 const ignored = /^_|\.test\.ts$/;
 
@@ -74,7 +75,37 @@ for (file of program.getSourceFiles()) {
 	sources.push(``);
 }
 
-const newFileData = sources.map((node) => {
+const newFileData = sources.filter((item, index, self) => {
+	return self.indexOf(item) === self.lastIndexOf(item);
+}).map((node) => {
 	return node;
 }).join('\n');
-writeFileSync(targetIndexFile, newFileData);
+
+process.chdir(dirname(CONFIG_FILE));
+if (existsSync(targetIndexFile)) {
+	unlinkSync(targetIndexFile);
+}
+
+processString(targetIndexFile, newFileData, {
+	verify      : true,
+	replace     : true,
+	tsconfig    : true,
+	tsconfigFile: CONFIG_FILE,
+	tslint      : true,
+	tslintFile  : null,
+	editorconfig: true,
+	vscode      : true,
+	vscodeFile  : null,
+	tsfmt       : true,
+	tsfmtFile   : null,
+}).then((result) => {
+	console.error(result.message);
+	if (result.error) {
+		process.exit(1);
+	}
+	writeFileSync(targetIndexFile, result.dest + `\n/*\n${JSON.stringify(result.settings, null, 4)}\n*/`, 'utf8');
+	process.exit(0);
+}, (e) => {
+	throw e;
+});
+
