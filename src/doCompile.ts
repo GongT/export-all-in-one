@@ -28,7 +28,7 @@ export async function doCompile(command: ParsedCommandLine) {
 		.replace(importStatements, '')
 		.replace(multipleEmptyLines, '\n\n');
 
-	writeFileSync(outFile + '.d.ts', dts, 'utf8');
+	// writeFileSync(outFile + '.d.ts', dts, 'utf8');
 	writeFileSync(outFile, `declare module "${projectPackage().name}" {
 	${dtsNew}
 }`, 'utf8');
