@@ -13,6 +13,8 @@ const tsconfig = resolve('src/tsconfig.json');
 
 const external = [
 	pkg.name,
+	'fs',
+	'path',
 	...Object.keys(pkg.dependencies || {}),
 	...Object.keys(pkg.devDependencies || {}),
 ];

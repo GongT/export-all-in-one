@@ -1,6 +1,6 @@
 ///<reference types="node"/>
 
-import { dirname, resolve } from 'path';
+import { dirname, posix, resolve } from 'path';
 import { existsSync, lstatSync } from 'fs';
 
 const item = process.argv[process.argv.length - 1] || '.';
@@ -37,4 +37,5 @@ while (itr !== '/') {
 }
 
 export const PROJECT_ROOT = itr;
-export const PROJECT_PACKAGE_FILE = resolve(itr, 'package.json');
+export const CONFIG_FILE_REL = posix.relative(itr, CONFIG_FILE);
+
