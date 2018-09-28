@@ -8,7 +8,8 @@ import { processString } from 'typescript-formatter';
 import { createCompilerHost, createProgram, forEachChild, Node, ParsedCommandLine, Program, SourceFile } from 'typescript';
 import { filterIgnoreFiles, isFileIgnored } from 'filterIgnoreFiles';
 
-export function doGenerate(command: ParsedCommandLine) {
+export async function doGenerate(command: ParsedCommandLine) {
+	console.log('\x1B[38;5;10mcreating typescript program...\x1B[0m');
 	const host = createCompilerHost(command.options, true);
 
 	const program: Program = createProgram(filterIgnoreFiles(command), command.options, host);
@@ -33,22 +34,25 @@ export function doGenerate(command: ParsedCommandLine) {
 			sources.push(``);
 			continue;
 		}
-
-		console.log('\x1B[38;5;14mParsing file: %s...\x1B[0m', file.fileName);
+		const fnDebug = file.fileName.slice(0, process.stdout.columns - 8 || Infinity);
+		process.stdout.write(`\x1B[K\x1B[2m - ${fnDebug}...\x1B[0m\x1B[K\r`);
 		forEachChild(file, (node: Node) => {
 			tokenWalk(sources, node, checker);
 		});
 		sources.push(``);
 	}
 
+	console.log('\x1B[K\x1B[38;5;10mtypescript program created!\x1B[0m');
 	const packageJson = projectPackage();
 	if (!packageJson.scripts) {
 		packageJson.scripts = {};
 	}
 
+	console.log('\x1B[38;5;10mwrite tsconfig.d.json...\x1B[0m');
 	const dtsConfigOptionsFile = writeDtsJson(command.options);
 
 	packageJson.scripts['build:exports'] = `export-all-in-one "${CONFIG_FILE_REL}" && export-all-in-one -c "${dtsConfigOptionsFile}"`;
+	console.log('\x1B[38;5;10mupdate package.json scripts...\x1B[0m');
 	rewritePackage(packageJson);
 
 	const newFileData = sources.filter((item, index, self) => {
@@ -62,9 +66,12 @@ export function doGenerate(command: ParsedCommandLine) {
 		unlinkSync(targetIndexFile);
 	}
 
-	processString(targetIndexFile, newFileData, {
-		verify      : true,
-		replace     : true,
+	writeFileSync(targetIndexFile, newFileData, 'utf8');
+	console.log('\x1B[38;5;10mformatting _index.ts...\x1B[0m');
+
+	return processString(targetIndexFile, newFileData, {
+		verify      : false,
+		replace     : false,
 		tsconfig    : true,
 		tsconfigFile: CONFIG_FILE,
 		tslint      : true,
@@ -75,13 +82,12 @@ export function doGenerate(command: ParsedCommandLine) {
 		tsfmt       : true,
 		tsfmtFile   : null,
 	}).then((result) => {
-		console.error(result.message);
 		if (result.error) {
-			process.exit(1);
+			writeFileSync(targetIndexFile, newFileData, 'utf8');
+			console.error(`this most caused by compile error, you can test with
+\x1B[38;5;14\tmtsc -w -p ${CONFIG_FILE}\x1B[0m`);
+			throw new Error(result.message);
 		}
 		writeFileSync(targetIndexFile, result.dest + `\n/*\n${JSON.stringify(result.settings, null, 4)}\n*/`, 'utf8');
-		process.exit(0);
-	}, (e) => {
-		throw e;
 	});
 }
