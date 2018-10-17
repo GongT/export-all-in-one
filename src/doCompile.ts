@@ -1,6 +1,5 @@
 import { createCompilerHost, createProgram, ParsedCommandLine, Program } from 'typescript';
 import { existsSync, readFileSync, writeFileSync } from 'fs';
-import { projectPackage } from 'package';
 
 const moduleDeclare = /^declare module ".+?" {(.+?)^}/smg;
 const importStatements = /^\s*import .+$/mg;
@@ -25,13 +24,12 @@ export async function doCompile(command: ParsedCommandLine) {
 			return m[1];
 		})
 		.join('')
+		.replace(/^    /mg, '')
 		.replace(importStatements, '')
 		.replace(multipleEmptyLines, '\n\n');
 
 	// writeFileSync(outFile + '.d.ts', dts, 'utf8');
-	writeFileSync(outFile, `declare module "${projectPackage().name}" {
-	${dtsNew}
-}`, 'utf8');
+	writeFileSync(outFile, dtsNew, 'utf8');
 }
 
 export function matchAll(re: RegExp, s: string) {
