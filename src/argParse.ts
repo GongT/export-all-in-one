@@ -1,6 +1,6 @@
 ///<reference types="node"/>
 
-import { dirname, posix, resolve } from 'path';
+import { dirname, relative, resolve } from 'path';
 import { existsSync, lstatSync } from 'fs';
 
 const item = process.argv[process.argv.length - 1] || '.';
@@ -26,7 +26,7 @@ export const CONFIG_FILE = configFilePath;
 let itr = configFilePath;
 while (itr !== '/') {
 	itr = dirname(itr);
-	if (itr === '/' || /^[a-zA-Z]:/.test(itr)) {
+	if (itr === '/' || /^[a-zA-Z]:\/?$/.test(itr)) {
 		throw new Error('Cannot find any package.json from tsconfig directory to root');
 	}
 
@@ -37,5 +37,5 @@ while (itr !== '/') {
 }
 
 export const PROJECT_ROOT = itr;
-export const CONFIG_FILE_REL = posix.relative(itr, CONFIG_FILE);
+export const CONFIG_FILE_REL = relative(itr, CONFIG_FILE);
 

@@ -13,6 +13,7 @@ export async function doCompile(command: ParsedCommandLine) {
 
 	const outFile = command.options.outFile + '.d.ts';
 	if (!existsSync(outFile)) {
+		console.error('Must have a file at %s. But NOT !!!', outFile);
 		throw new Error('F*ck! Typescript API has changed.');
 	}
 
