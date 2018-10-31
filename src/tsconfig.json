@@ -1,6 +1,7 @@
 {
-	"extends": "/data/DevelopmentRoot/projects/export-all-in-one/node_modules/@gongt/single-dog/package/tsconfig.json",
+	"extends": "../node_modules/@gongt/single-dog/package/tsconfig.json",
 	"compilerOptions": {
+		"moduleResolution": "node",
 		"baseUrl": ".",
 		"outDir": "../dist"
 	}

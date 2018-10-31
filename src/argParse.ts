@@ -1,7 +1,8 @@
 ///<reference types="node"/>
 
-import { dirname, relative, resolve } from 'path';
 import { existsSync, lstatSync } from 'fs';
+import { dirname, resolve } from 'path';
+import { relativePosix } from './paths';
 
 const item = process.argv[process.argv.length - 1] || '.';
 const project = resolve(process.cwd(), item);
@@ -16,7 +17,7 @@ if (existsSync(project)) {
 }
 
 if (!configFilePath) {
-	throw new Error('Cannot find tsconfig.json file');
+	throw new Error('Cannot find tsconfig.json file: ' + project);
 }
 
 // modify this if some IDE supports other source root
@@ -29,7 +30,7 @@ while (itr !== '/') {
 	if (itr === '/' || /^[a-zA-Z]:\/?$/.test(itr)) {
 		throw new Error('Cannot find any package.json from tsconfig directory to root');
 	}
-
+	
 	const pkgFile = resolve(itr, 'package.json');
 	if (existsSync(pkgFile)) {
 		break;
@@ -37,5 +38,5 @@ while (itr !== '/') {
 }
 
 export const PROJECT_ROOT = itr;
-export const CONFIG_FILE_REL = relative(itr, CONFIG_FILE);
+export const CONFIG_FILE_REL = relativePosix(itr, CONFIG_FILE);
 

@@ -1,11 +1,19 @@
-import { CONFIG_FILE } from './argParse';
 import { normalize } from 'path';
-import { Diagnostic, formatDiagnostic, FormatDiagnosticsHost, getParsedCommandLineOfConfigFile, ParseConfigFileHost, ParsedCommandLine, sys, } from 'typescript';
-import { doCompile } from 'doCompile';
-import { doGenerate } from 'doGenerate';
+import {
+	Diagnostic,
+	formatDiagnostic,
+	FormatDiagnosticsHost,
+	getParsedCommandLineOfConfigFile,
+	ParseConfigFileHost,
+	ParsedCommandLine,
+	sys,
+} from 'typescript';
+import { CONFIG_FILE } from './argParse';
+import { doCompile } from './doCompile';
+import { doGenerate } from './doGenerate';
 
 const myFormatDiagnosticsHost: FormatDiagnosticsHost = {
-	getCurrentDirectory : sys.getCurrentDirectory,
+	getCurrentDirectory: sys.getCurrentDirectory,
 	getCanonicalFileName: normalize,
 	getNewLine(): string {
 		return sys.newLine;
@@ -17,10 +25,10 @@ const myParseConfigFileHost: ParseConfigFileHost = {
 		console.error(formatDiagnostic(diagnostic, myFormatDiagnosticsHost));
 	},
 	useCaseSensitiveFileNames: false,
-	readDirectory            : sys.readDirectory,
-	fileExists               : sys.fileExists,
-	readFile                 : sys.readFile,
-	getCurrentDirectory      : sys.getCurrentDirectory,
+	readDirectory: sys.readDirectory,
+	fileExists: sys.fileExists,
+	readFile: sys.readFile,
+	getCurrentDirectory: sys.getCurrentDirectory,
 };
 
 const configParseResult: ParsedCommandLine = getParsedCommandLineOfConfigFile(CONFIG_FILE, {}, myParseConfigFileHost);

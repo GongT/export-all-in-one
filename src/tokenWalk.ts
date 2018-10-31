@@ -1,5 +1,4 @@
-import { basename, resolve } from 'path';
-import { SOURCE_ROOT } from './argParse';
+import { basename, normalize, resolve } from 'path';
 import {
 	ClassDeclaration,
 	ExportAssignment,
@@ -22,6 +21,7 @@ import {
 	SyntaxKind,
 	TypeChecker,
 } from 'typescript';
+import { SOURCE_ROOT } from './argParse';
 
 function warn(node: Node, s: string, e?: Error) {
 	if (e instanceof Error) {
@@ -33,7 +33,7 @@ function warn(node: Node, s: string, e?: Error) {
 
 export function tokenWalk(ret: string[], node: Node, checker: TypeChecker) {
 	const relative = relativeToRoot(node.getSourceFile().fileName);
-
+	
 	if (isExportDeclaration(node) && !isCommentIgnore(node)) {
 		// export a from b;
 		// export {a,b,c};
@@ -62,25 +62,25 @@ export function tokenWalk(ret: string[], node: Node, checker: TypeChecker) {
 		// export interface
 		const id = node as InterfaceDeclaration;
 		const name = getName(id.name, relative, 'I');
-
+		
 		doExport(ret, id, name, relative);
 	} else if (isClassDeclaration(node) && isExported(node) && !isCommentIgnore(node)) {
 		// export class
 		const cd = node as ClassDeclaration;
 		const name = getName(cd.name, relative, true);
-
+		
 		doExport(ret, cd, name, relative);
 	} else if (isFunctionDeclaration(node) && isExported(node) && !isCommentIgnore(node)) {
 		// export function abc
 		const fd = node as FunctionDeclaration;
 		const name = getName(fd.name, relative, false);
-
+		
 		doExport(ret, fd, name, relative);
 	} else if (isExportAssignment(node) && !isCommentIgnore(node)) {
 		// export default Value
 		const ea = node as ExportAssignment;
 		const id: Identifier = isIdentifier(ea.expression)? ea.expression : null;
-
+		
 		const name = getName(id, relative, false);
 		ret.push(`import ${name} from '${relative}'; export { ${name} };`);
 	}
@@ -103,7 +103,7 @@ function doExport(ret: string[], node: Node, name: string, file: string) {
 	}
 }
 
-function normalizeExportClause(node: Node & {exportClause?: NamedExports}) {
+function normalizeExportClause(node: Node&{exportClause?: NamedExports}) {
 	if (!node.exportClause) {
 		return '*';
 	}
@@ -129,10 +129,10 @@ function resolveRelate(fileLiteral: StringLiteral) {
 }
 
 export function relativeToRoot(abs: string) {
-	return abs.replace(SOURCE_ROOT, '').replace(/^\//g, '').replace(/\.ts$/, '');
+	return normalize(abs).replace(SOURCE_ROOT, '').replace(/^[\/\\]/g, '').replace(/\.ts$/, '');
 }
 
-function getName(name: Identifier, file: string, big: boolean | string) {
+function getName(name: Identifier, file: string, big: boolean|string) {
 	if (name) {
 		return idToString(name);
 	} else {
@@ -140,7 +140,7 @@ function getName(name: Identifier, file: string, big: boolean | string) {
 	}
 }
 
-function varNameFromFile(file: string, big: boolean | string) {
+function varNameFromFile(file: string, big: boolean|string) {
 	let name = basename(file);
 	if (big) {
 		name = name.replace(/^[a-z]/, e => e.toUpperCase());
@@ -150,9 +150,9 @@ function varNameFromFile(file: string, big: boolean | string) {
 	} else {
 		name = name.replace(/^[A-Z]/, e => e.toLowerCase());
 	}
-
+	
 	name = name.replace(/[_-][a-z]/g, e => e[1].toUpperCase());
-
+	
 	return name;
 }
 
@@ -161,7 +161,7 @@ function isExported(node: Node) {
 		return false; // no any modify
 	}
 	return node.modifiers.findIndex(e => e.kind === SyntaxKind.ExportKeyword) !== -1;
-
+	
 }
 
 function isDefaultExport(node: Node) {
@@ -169,5 +169,5 @@ function isDefaultExport(node: Node) {
 		return false; // no any modify
 	}
 	return node.modifiers.findIndex(e => e.kind === SyntaxKind.DefaultKeyword) !== -1;
-
+	
 }
