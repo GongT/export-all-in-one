@@ -32,7 +32,7 @@ function warn(node: Node, s: string, e?: Error) {
 }
 
 export function tokenWalk(ret: string[], node: Node, checker: TypeChecker) {
-	const relative = relativeToRoot(node.getSourceFile().fileName);
+	const relative = './' + relativeToRoot(node.getSourceFile().fileName);
 	
 	if (isExportDeclaration(node) && !isCommentIgnore(node)) {
 		// export a from b;
