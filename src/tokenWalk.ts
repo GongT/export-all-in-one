@@ -1,11 +1,14 @@
 import { basename, normalize, resolve } from 'path';
 import {
+	BindingName,
 	ClassDeclaration,
 	ExportAssignment,
+	ExportDeclaration,
 	FunctionDeclaration,
 	getJSDocTags,
 	Identifier,
 	InterfaceDeclaration,
+	isArrayBindingPattern,
 	isClassDeclaration,
 	isExportAssignment,
 	isExportDeclaration,
@@ -13,13 +16,18 @@ import {
 	isIdentifier,
 	isInterfaceDeclaration,
 	isModuleDeclaration,
+	isObjectBindingPattern,
+	isOmittedExpression,
 	isStringLiteral,
+	isVariableStatement,
 	ModuleDeclaration,
 	NamedExports,
 	Node,
 	StringLiteral,
 	SyntaxKind,
 	TypeChecker,
+	VariableDeclaration,
+	VariableStatement,
 } from 'typescript';
 import { SOURCE_ROOT } from './argParse';
 
@@ -37,18 +45,19 @@ export function tokenWalk(ret: string[], node: Node, checker: TypeChecker) {
 	if (isExportDeclaration(node) && !isCommentIgnore(node)) {
 		// export a from b;
 		// export {a,b,c};
-		if (node.moduleSpecifier) {
-			if (isStringLiteral(node.moduleSpecifier)) {
+		const ed = node as ExportDeclaration;
+		if (ed.moduleSpecifier) {
+			if (isStringLiteral(ed.moduleSpecifier)) {
 				try {
-					ret.push(`export ${normalizeExportClause(node)} from ${resolveRelate(node.moduleSpecifier)};`);
+					ret.push(`export ${normalizeExportClause(ed)} from ${resolveRelate(ed.moduleSpecifier)};`);
 				} catch (e) {
-					warn(node.moduleSpecifier, 'tokenWalk failed', e);
+					warn(ed.moduleSpecifier, 'tokenWalk failed', e);
 				}
 			} else {
-				warn(node.moduleSpecifier, 'import from invalid path');
+				warn(ed.moduleSpecifier, 'import from invalid path');
 			}
 		} else {
-			ret.push(`export ${normalizeExportClause(node)} from '${relative}';`);
+			ret.push(`export ${normalizeExportClause(ed)} from '${relative}';`);
 		}
 	} else if (isModuleDeclaration(node) && isExported(node) && !isCommentIgnore(node)) {
 		// export namespace|module
@@ -83,10 +92,38 @@ export function tokenWalk(ret: string[], node: Node, checker: TypeChecker) {
 		
 		const name = getName(id, relative, false);
 		ret.push(`import ${name} from '${relative}'; export { ${name} };`);
+	} else if (isVariableStatement(node) && isExported(node) && !isCommentIgnore(node)) {
+		// export const/let/var Value
+		const vs = node as VariableStatement;
+		const names = vs.declarationList.declarations.map((node: VariableDeclaration) => {
+			return findingBindingType(node.name);
+		}).filter(e => !!e).join(', ');
+		
+		ret.push(`export {${names}} from '${relative}';`);
+	} else {
+		// console.log(SyntaxKind[node.kind]);
 	}
 }
 
-function isCommentIgnore(node: Node) {
+function findingBindingType(node: BindingName): string[] {
+	const ret: string[] = [];
+	if (isObjectBindingPattern(node)) {
+		for (const element of node.elements) {
+			ret.push(...findingBindingType(element.name));
+		}
+	} else if (isArrayBindingPattern(node)) {
+		for (const element of node.elements) {
+			if (!isOmittedExpression(element)) {
+				ret.push(...findingBindingType(element.name));
+			}
+		}
+	} else if (isIdentifier(node)) {
+		ret.push(idToString(node));
+	}
+	return ret;
+}
+
+export function isCommentIgnore(node: Node) {
 	for (const item of getJSDocTags(node)) {
 		if (item.tagName && idToString(item.tagName).toLowerCase() === 'internal') {
 			return true;
