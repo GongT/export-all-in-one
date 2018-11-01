@@ -1,36 +1,45 @@
 import { existsSync, readFileSync, writeFileSync } from 'fs';
 import { createCompilerHost, createProgram, ParsedCommandLine, Program } from 'typescript';
 
-const moduleDeclare = /^declare module ".+?" {(.+?)^}/smg;
+const moduleDeclare = /^declare module "(.+?)" {(.+?)^}/smg;
 const internalExport = /^\/\*\*.*?@internal.*?\*\/$[\r\n]+^(?:export (?:const|let|var|type) .+?;$|export (?:enum|interface|class) .+?^}$)/smg;
-const importStatements = /^\s*import .+$/mg;
+const importStatements = /^\s*import .+ from "(.+)";$/mg;
 const multipleEmptyLines = /\n\s*\n\s*\n/g;
 
 export async function doCompile(command: ParsedCommandLine) {
 	const host = createCompilerHost(command.options, true);
-
+	
 	const program: Program = createProgram(command.fileNames, command.options, host);
 	await program.emit();
-
+	
 	const outFile = command.options.outFile + '.d.ts';
 	if (!existsSync(outFile)) {
 		console.error('Must have a file at %s. But NOT !!!', outFile);
 		throw new Error('F*ck! Typescript API has changed.');
 	}
-
+	
 	const dts = readFileSync(outFile, 'utf8');
-
+	
 	const ms = matchAll(moduleDeclare, dts);
-	ms.pop();
-	const dtsNew = ms.map((m) => {
-		return m[1];
-	})
-	                 .join('')
-	                 .replace(/^    /mg, '')
-	                 .replace(importStatements, '')
-	                 .replace(internalExport, '')
-	                 .replace(multipleEmptyLines, '\n\n');
-
+	
+	ms.pop(); // "_index" itself
+	
+	const myselfModules = ms.map(m => m[1]);
+	
+	const dtsNew = ms
+		.map((m) => m[2])
+		.join('')
+		.replace(/^    /mg, '')
+		.replace(importStatements, (m0, moduleName) => {
+			if (myselfModules.includes(moduleName)) {
+				return '';
+			} else {
+				return m0;
+			}
+		})
+		.replace(internalExport, '')
+		.replace(multipleEmptyLines, '\n\n');
+	
 	// writeFileSync(outFile + '.d.ts', dts, 'utf8');
 	writeFileSync(outFile, dtsNew, 'utf8');
 }

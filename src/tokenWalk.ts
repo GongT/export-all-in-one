@@ -7,6 +7,7 @@ import {
 	FunctionDeclaration,
 	getJSDocTags,
 	Identifier,
+	ImportDeclaration,
 	InterfaceDeclaration,
 	isArrayBindingPattern,
 	isClassDeclaration,
@@ -14,14 +15,16 @@ import {
 	isExportDeclaration,
 	isFunctionDeclaration,
 	isIdentifier,
+	isImportDeclaration,
 	isInterfaceDeclaration,
 	isModuleDeclaration,
+	isNamedImports,
+	isNamespaceImport,
 	isObjectBindingPattern,
 	isOmittedExpression,
 	isStringLiteral,
 	isVariableStatement,
 	ModuleDeclaration,
-	NamedExports,
 	Node,
 	StringLiteral,
 	SyntaxKind,
@@ -100,8 +103,13 @@ export function tokenWalk(ret: string[], node: Node, checker: TypeChecker) {
 		}).filter(e => !!e).join(', ');
 		
 		ret.push(`export {${names}} from '${relative}';`);
+	} else if (isImportDeclaration(node)) {
+		// no effect (generally
+		const id = node as ImportDeclaration;
+		const moduleName = id.moduleSpecifier as StringLiteral;
+		ret.push(`import ${normalizeImportClause(id)} from '${moduleName.text}';`);
 	} else {
-		// console.log(SyntaxKind[node.kind]);
+		console.log(SyntaxKind[node.kind]);
 	}
 }
 
@@ -140,13 +148,33 @@ function doExport(ret: string[], node: Node, name: string, file: string) {
 	}
 }
 
-function normalizeExportClause(node: Node&{exportClause?: NamedExports}) {
+function normalizeExportClause(node: ExportDeclaration) {
 	if (!node.exportClause) {
 		return '*';
 	}
 	const replaced: string[] = [];
 	for (const item of node.exportClause.elements) {
 		replaced.push(idToString(item.name));
+	}
+	return '{ ' + replaced.join(', ') + ' }';
+}
+
+function normalizeImportClause(node: ImportDeclaration) {
+	if (!node.importClause) {
+		return '';
+	}
+	const replaced: string[] = [];
+	const bindings = node.importClause.namedBindings;
+	if (isNamespaceImport(bindings)) {
+		replaced.push(idToString(bindings.name));
+	} else if (isNamedImports(bindings)) {
+		for (const item of bindings.elements) {
+			if (item.propertyName) {
+				replaced.push(idToString(item.name) + ' as ' + idToString(item.propertyName));
+			} else {
+				replaced.push(idToString(item.name));
+			}
+		}
 	}
 	return '{ ' + replaced.join(', ') + ' }';
 }
