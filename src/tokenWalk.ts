@@ -7,7 +7,6 @@ import {
 	FunctionDeclaration,
 	getJSDocTags,
 	Identifier,
-	ImportDeclaration,
 	InterfaceDeclaration,
 	isArrayBindingPattern,
 	isClassDeclaration,
@@ -18,8 +17,6 @@ import {
 	isImportDeclaration,
 	isInterfaceDeclaration,
 	isModuleDeclaration,
-	isNamedImports,
-	isNamespaceImport,
 	isObjectBindingPattern,
 	isOmittedExpression,
 	isStringLiteral,
@@ -103,13 +100,13 @@ export function tokenWalk(ret: string[], node: Node, checker: TypeChecker) {
 		}).filter(e => !!e).join(', ');
 		
 		ret.push(`export {${names}} from '${relative}';`);
-	} else if (isImportDeclaration(node)) {
-		// no effect (generally
-		const id = node as ImportDeclaration;
-		const moduleName = id.moduleSpecifier as StringLiteral;
-		ret.push(`import ${normalizeImportClause(id)} from '${moduleName.text}';`);
+	} else if (isImportDeclaration(node) && !isCommentIgnore(node)) {
+		// not used import will cause error, and that is no effect
+		// const id = node as ImportDeclaration;
+		// const moduleName = id.moduleSpecifier as StringLiteral;
+		// ret.push(`import ${normalizeImportClause(id)} from '${moduleName.text}';`);
 	} else {
-		console.log(SyntaxKind[node.kind]);
+		// console.log(SyntaxKind[node.kind]);
 	}
 }
 
@@ -159,7 +156,7 @@ function normalizeExportClause(node: ExportDeclaration) {
 	return '{ ' + replaced.join(', ') + ' }';
 }
 
-function normalizeImportClause(node: ImportDeclaration) {
+/*function normalizeImportClause(node: ImportDeclaration) {
 	if (!node.importClause) {
 		return '';
 	}
@@ -177,7 +174,7 @@ function normalizeImportClause(node: ImportDeclaration) {
 		}
 	}
 	return '{ ' + replaced.join(', ') + ' }';
-}
+}*/
 
 export function idToString(id: Identifier) {
 	return id.escapedText.toString();
