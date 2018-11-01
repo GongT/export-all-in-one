@@ -1,6 +1,6 @@
 {
 	"name": "@gongt/export-all-in-one",
-	"version": "1.0.9",
+	"version": "1.0.10",
 	"description": "write your library with typescript. make all exports available from single entry.",
 	"keywords": [
 		"typescript",
