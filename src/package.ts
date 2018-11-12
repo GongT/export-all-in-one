@@ -1,19 +1,17 @@
-import { existsSync, readFileSync, writeFileSync } from 'fs';
+import { existsSync } from 'fs';
 import { dirname, resolve } from 'path';
 import { CONFIG_FILE } from './argParse';
+import { readJsonSync, writeJsonSyncIfChange } from './writeFile';
 
 export interface IMyPackageJson {
 	[key: string]: any;
 	
 	scripts: {[key: string]: string};
-	
-	___tabs: string;
-	___lastNewLine: string;
 }
 
 let pathCache: string;
 
-function projectPackagePath() {
+export function projectPackagePath() {
 	if (pathCache) {
 		return pathCache;
 	}
@@ -30,28 +28,9 @@ function projectPackagePath() {
 }
 
 export function projectPackage(): IMyPackageJson {
-	const jsonString = readFileSync(projectPackagePath(), 'utf8');
-	
-	const findSpace = /^\s+/m.exec(jsonString);
-	const ___tabs = findSpace? findSpace[0] : '  ';
-	const ___lastNewLine = jsonString.slice(jsonString.lastIndexOf('}') + 1);
-	
-	return {
-		...JSON.parse(jsonString),
-		___tabs,
-		___lastNewLine,
-	};
+	return readJsonSync(projectPackagePath());
 }
 
 export function rewritePackage(data: IMyPackageJson) {
-	const {___tabs, ___lastNewLine, ...pack} = data;
-	const packageData = JSON.stringify(pack, null, 1).replace(/^\s+/mg, (m0: string) => {
-		return new Array(m0.length).fill(___tabs).join('');
-	}) + ___lastNewLine;
-	
-	if (readFileSync(projectPackagePath(), 'utf8') === packageData) {
-		return;
-	}
-	
-	writeFileSync(projectPackagePath(), packageData, 'utf8');
+	writeJsonSyncIfChange(projectPackagePath(), data);
 }

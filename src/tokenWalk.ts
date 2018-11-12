@@ -1,7 +1,9 @@
 import { basename, normalize, resolve } from 'path';
+import { SOURCE_ROOT } from './argParse';
 import {
 	BindingName,
 	ClassDeclaration,
+	displayPartsToString,
 	ExportAssignment,
 	ExportDeclaration,
 	FunctionDeclaration,
@@ -14,7 +16,6 @@ import {
 	isExportDeclaration,
 	isFunctionDeclaration,
 	isIdentifier,
-	isImportDeclaration,
 	isInterfaceDeclaration,
 	isModuleDeclaration,
 	isObjectBindingPattern,
@@ -29,7 +30,8 @@ import {
 	VariableDeclaration,
 	VariableStatement,
 } from 'typescript';
-import { SOURCE_ROOT } from './argParse';
+
+Object.assign(global, { SyntaxKind });
 
 function warn(node: Node, s: string, e?: Error) {
 	if (e instanceof Error) {
@@ -49,6 +51,7 @@ export function tokenWalk(ret: string[], node: Node, checker: TypeChecker) {
 		if (ed.moduleSpecifier) {
 			if (isStringLiteral(ed.moduleSpecifier)) {
 				try {
+					// nodeComment(ret, node, checker);
 					ret.push(`export ${normalizeExportClause(ed)} from ${resolveRelate(ed.moduleSpecifier)};`);
 				} catch (e) {
 					warn(ed.moduleSpecifier, 'tokenWalk failed', e);
@@ -57,6 +60,7 @@ export function tokenWalk(ret: string[], node: Node, checker: TypeChecker) {
 				warn(ed.moduleSpecifier, 'import from invalid path');
 			}
 		} else {
+			// nodeComment(ret, node, checker);
 			ret.push(`export ${normalizeExportClause(ed)} from '${relative}';`);
 		}
 	} else if (isModuleDeclaration(node) && isExported(node) && !isCommentIgnore(node)) {
@@ -65,6 +69,7 @@ export function tokenWalk(ret: string[], node: Node, checker: TypeChecker) {
 		if (isStringLiteral(md.name)) {
 			warn(md, 'only .d.ts can use this.');
 		} else {
+			// nodeComment(ret, node, checker);
 			ret.push(`export { ${idToString(md.name)} } from '${relative}';`);
 		}
 	} else if (isInterfaceDeclaration(node) && isExported(node) && !isCommentIgnore(node)) {
@@ -72,18 +77,21 @@ export function tokenWalk(ret: string[], node: Node, checker: TypeChecker) {
 		const id = node as InterfaceDeclaration;
 		const name = getName(id.name, relative, 'I');
 		
+		// nodeComment(ret, node, checker);
 		doExport(ret, id, name, relative);
 	} else if (isClassDeclaration(node) && isExported(node) && !isCommentIgnore(node)) {
 		// export class
 		const cd = node as ClassDeclaration;
 		const name = getName(cd.name, relative, true);
 		
+		// nodeComment(ret, node, checker);
 		doExport(ret, cd, name, relative);
 	} else if (isFunctionDeclaration(node) && isExported(node) && !isCommentIgnore(node)) {
 		// export function abc
 		const fd = node as FunctionDeclaration;
 		const name = getName(fd.name, relative, false);
 		
+		// nodeComment(ret, node, checker);
 		doExport(ret, fd, name, relative);
 	} else if (isExportAssignment(node) && !isCommentIgnore(node)) {
 		// export default Value
@@ -91,6 +99,7 @@ export function tokenWalk(ret: string[], node: Node, checker: TypeChecker) {
 		const id: Identifier = isIdentifier(ea.expression)? ea.expression : null;
 		
 		const name = getName(id, relative, false);
+		// nodeComment(ret, node, checker);
 		ret.push(`import ${name} from '${relative}'; export { ${name} };`);
 	} else if (isVariableStatement(node) && isExported(node) && !isCommentIgnore(node)) {
 		// export const/let/var Value
@@ -99,14 +108,29 @@ export function tokenWalk(ret: string[], node: Node, checker: TypeChecker) {
 			return findingBindingType(node.name);
 		}).filter(e => !!e).join(', ');
 		
+		// nodeComment(ret, node, checker);
 		ret.push(`export {${names}} from '${relative}';`);
-	} else if (isImportDeclaration(node) && !isCommentIgnore(node)) {
-		// not used import will cause error, and that is no effect
-		// const id = node as ImportDeclaration;
-		// const moduleName = id.moduleSpecifier as StringLiteral;
-		// ret.push(`import ${normalizeImportClause(id)} from '${moduleName.text}';`);
+		// } else if (isImportDeclaration(node) && !isCommentIgnore(node)) { 	// not used import will cause error, and that is no effect
 	} else {
-		// console.log(SyntaxKind[node.kind]);
+		nodeComment(ret, node, checker);
+		// console.log('ignore AST node: %s', SyntaxKind[node.kind]);
+	}
+}
+
+export function nodeComment(ret: string[], node: Node, checker: TypeChecker) {
+	if (isCommentIgnore(node)) {
+		return;
+	}
+	
+	const tags = getJSDocTags(node);
+	if (tags.length) {
+		ret.unshift(tags[0].parent.getFullText());
+		return;
+	}
+	const symb = checker.getSymbolAtLocation((node as any).name);
+	if (symb) {
+		const jsdocs = symb.getDocumentationComment(checker);
+		ret.unshift('/*' + displayPartsToString(jsdocs) + '*/');
 	}
 }
 
@@ -156,28 +180,16 @@ function normalizeExportClause(node: ExportDeclaration) {
 	return '{ ' + replaced.join(', ') + ' }';
 }
 
-/*function normalizeImportClause(node: ImportDeclaration) {
-	if (!node.importClause) {
-		return '';
-	}
-	const replaced: string[] = [];
-	const bindings = node.importClause.namedBindings;
-	if (isNamespaceImport(bindings)) {
-		replaced.push(idToString(bindings.name));
-	} else if (isNamedImports(bindings)) {
-		for (const item of bindings.elements) {
-			if (item.propertyName) {
-				replaced.push(idToString(item.name) + ' as ' + idToString(item.propertyName));
-			} else {
-				replaced.push(idToString(item.name));
-			}
-		}
-	}
-	return '{ ' + replaced.join(', ') + ' }';
-}*/
-
 export function idToString(id: Identifier) {
 	return id.escapedText.toString();
+}
+
+export function nameToString(name: Identifier | StringLiteral) {
+	if (isStringLiteral(name)) {
+		return name.text;
+	} else {
+		return name.escapedText.toString();
+	}
 }
 
 function resolveRelate(fileLiteral: StringLiteral) {
@@ -194,7 +206,7 @@ export function relativeToRoot(abs: string) {
 	return normalize(abs).replace(SOURCE_ROOT, '').replace(/^[\/\\]/g, '').replace(/\.ts$/, '');
 }
 
-function getName(name: Identifier, file: string, big: boolean|string) {
+function getName(name: Identifier, file: string, big: boolean | string) {
 	if (name) {
 		return idToString(name);
 	} else {
@@ -202,7 +214,7 @@ function getName(name: Identifier, file: string, big: boolean|string) {
 	}
 }
 
-function varNameFromFile(file: string, big: boolean|string) {
+function varNameFromFile(file: string, big: boolean | string) {
 	let name = basename(file);
 	if (big) {
 		name = name.replace(/^[a-z]/, e => e.toUpperCase());
