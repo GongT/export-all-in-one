@@ -1,46 +1,17 @@
-import { normalize } from 'path';
-import {
-	Diagnostic,
-	formatDiagnostic,
-	FormatDiagnosticsHost,
-	getParsedCommandLineOfConfigFile,
-	ParseConfigFileHost,
-	ParsedCommandLine,
-	sys,
-} from 'typescript';
-import { CONFIG_FILE } from './argParse';
 import { doCompile } from './doCompile';
 import { doGenerate } from './doGenerate';
+import { getOptions } from './configFile';
 
-const myFormatDiagnosticsHost: FormatDiagnosticsHost = {
-	getCurrentDirectory: sys.getCurrentDirectory,
-	getCanonicalFileName: normalize,
-	getNewLine(): string {
-		return sys.newLine;
-	},
-};
-
-const myParseConfigFileHost: ParseConfigFileHost = {
-	onUnRecoverableConfigFileDiagnostic(diagnostic: Diagnostic) {
-		console.error(formatDiagnostic(diagnostic, myFormatDiagnosticsHost));
-	},
-	useCaseSensitiveFileNames: false,
-	readDirectory: sys.readDirectory,
-	fileExists: sys.fileExists,
-	readFile: sys.readFile,
-	getCurrentDirectory: sys.getCurrentDirectory,
-};
-
-const configParseResult: ParsedCommandLine = getParsedCommandLineOfConfigFile(CONFIG_FILE, {}, myParseConfigFileHost);
 if (process.argv.includes('-v')) {
+	const configParseResult = getOptions();
 	console.error(configParseResult.options);
 }
 
 let p: PromiseLike<void>;
 if (process.argv.includes('-c')) {
-	p = doCompile(configParseResult);
+	p = doCompile();
 } else {
-	p = doGenerate(configParseResult);
+	p = doGenerate();
 }
 
 p.then(() => {

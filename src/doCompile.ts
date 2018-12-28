@@ -12,20 +12,21 @@ import {
 	isStringLiteral,
 	ModuleBlock,
 	Node,
-	ParsedCommandLine,
 	Program,
 	SourceFile,
 	SyntaxKind,
 } from 'typescript';
 import { existsSync, readFileSync, writeFileSync } from 'fs';
-import { idToString, nameToString } from 'tokenWalk';
+import { idToString, nameToString } from './util';
+import { getOptions } from './configFile';
 
 const moduleDeclare = /^declare module "(\S+?)" {(.+?)^}/smg;
 // const internalExport = /^\/\*\*.*?@internal.*?\*\/$[\r\n]+^(?:export (?:const|let|var|type) .+?;$|export (?:enum|interface|class) .+?^}$)/smg;
 const importStatements = /^\s*import .+$/mg;
 const multipleEmptyLines = /\n\s*\n\s*\n/g;
 
-export async function doCompile(command: ParsedCommandLine) {
+export async function doCompile() {
+	const command = getOptions();
 	const host = createCompilerHost(command.options, true);
 	
 	console.log('compile file %s ...', command.fileNames);

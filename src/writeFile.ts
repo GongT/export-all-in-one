@@ -1,7 +1,7 @@
-import { readFileSync, writeFileSync } from 'fs';
+import { existsSync, readFileSync, writeFileSync } from 'fs';
 
 export function writeFileSyncIfChange(file: string, data: string) {
-	if (readFileSync(file, 'utf8') === data) {
+	if (existsSync(file) && readFileSync(file, 'utf8') === data) {
 		console.log('    -> no change');
 		return;
 	}

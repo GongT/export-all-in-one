@@ -37,6 +37,8 @@ while (itr !== '/') {
 	}
 }
 
-export const PROJECT_ROOT = itr;
+export const PROJECT_ROOT = resolve(itr);
 export const CONFIG_FILE_REL = relativePosix(itr, CONFIG_FILE);
 
+export const EXPORT_TEMP_PATH = PROJECT_ROOT === SOURCE_ROOT? resolve(SOURCE_ROOT, '.export-all-in-one') : resolve(SOURCE_ROOT, '..', '.export-all-in-one');
+export const DTS_CONFIG_FILE = resolve(EXPORT_TEMP_PATH, 'tsconfig.json');

@@ -20,8 +20,7 @@ export-all-in-one ./path/to/tsconfig.json
 PS: Of course, all your file can not export two same named symbol....     
 But you have no reason to do that, except you want to fool your IDE.
 
-PS2: default export is exported as it's file name. (unstable)     
-What? you r using default export? LOL
+PS2: default export is exported as it's file name. (unstable)   
 
 PS3: Remember to use `/** @internal */` :D
 

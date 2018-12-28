@@ -3,11 +3,9 @@ import { SOURCE_ROOT } from './argParse';
 import {
 	BindingName,
 	ClassDeclaration,
-	displayPartsToString,
 	ExportAssignment,
 	ExportDeclaration,
 	FunctionDeclaration,
-	getJSDocTags,
 	Identifier,
 	InterfaceDeclaration,
 	isArrayBindingPattern,
@@ -30,6 +28,8 @@ import {
 	VariableDeclaration,
 	VariableStatement,
 } from 'typescript';
+import { nodeComment, shouldIncludeNode } from './testForExport';
+import { idToString } from './util';
 
 Object.assign(global, { SyntaxKind });
 
@@ -44,7 +44,7 @@ function warn(node: Node, s: string, e?: Error) {
 export function tokenWalk(ret: string[], node: Node, checker: TypeChecker) {
 	const relative = './' + relativeToRoot(node.getSourceFile().fileName);
 	
-	if (isExportDeclaration(node) && !isCommentIgnore(node)) {
+	if (isExportDeclaration(node) && shouldIncludeNode(node)) {
 		// export a from b;
 		// export {a,b,c};
 		const ed = node as ExportDeclaration;
@@ -63,7 +63,7 @@ export function tokenWalk(ret: string[], node: Node, checker: TypeChecker) {
 			// nodeComment(ret, node, checker);
 			ret.push(`export ${normalizeExportClause(ed)} from '${relative}';`);
 		}
-	} else if (isModuleDeclaration(node) && isExported(node) && !isCommentIgnore(node)) {
+	} else if (isModuleDeclaration(node) && isExported(node) && shouldIncludeNode(node)) {
 		// export namespace|module
 		const md = node as ModuleDeclaration;
 		if (isStringLiteral(md.name)) {
@@ -72,28 +72,28 @@ export function tokenWalk(ret: string[], node: Node, checker: TypeChecker) {
 			// nodeComment(ret, node, checker);
 			ret.push(`export { ${idToString(md.name)} } from '${relative}';`);
 		}
-	} else if (isInterfaceDeclaration(node) && isExported(node) && !isCommentIgnore(node)) {
+	} else if (isInterfaceDeclaration(node) && isExported(node) && shouldIncludeNode(node)) {
 		// export interface
 		const id = node as InterfaceDeclaration;
 		const name = getName(id.name, relative, 'I');
 		
 		// nodeComment(ret, node, checker);
 		doExport(ret, id, name, relative);
-	} else if (isClassDeclaration(node) && isExported(node) && !isCommentIgnore(node)) {
+	} else if (isClassDeclaration(node) && isExported(node) && shouldIncludeNode(node)) {
 		// export class
 		const cd = node as ClassDeclaration;
 		const name = getName(cd.name, relative, true);
 		
 		// nodeComment(ret, node, checker);
 		doExport(ret, cd, name, relative);
-	} else if (isFunctionDeclaration(node) && isExported(node) && !isCommentIgnore(node)) {
+	} else if (isFunctionDeclaration(node) && isExported(node) && shouldIncludeNode(node)) {
 		// export function abc
 		const fd = node as FunctionDeclaration;
 		const name = getName(fd.name, relative, false);
 		
 		// nodeComment(ret, node, checker);
 		doExport(ret, fd, name, relative);
-	} else if (isExportAssignment(node) && !isCommentIgnore(node)) {
+	} else if (isExportAssignment(node) && shouldIncludeNode(node)) {
 		// export default Value
 		const ea = node as ExportAssignment;
 		const id: Identifier = isIdentifier(ea.expression)? ea.expression : null;
@@ -101,7 +101,7 @@ export function tokenWalk(ret: string[], node: Node, checker: TypeChecker) {
 		const name = getName(id, relative, false);
 		// nodeComment(ret, node, checker);
 		ret.push(`import ${name} from '${relative}'; export { ${name} };`);
-	} else if (isVariableStatement(node) && isExported(node) && !isCommentIgnore(node)) {
+	} else if (isVariableStatement(node) && isExported(node) && shouldIncludeNode(node)) {
 		// export const/let/var Value
 		const vs = node as VariableStatement;
 		const names = vs.declarationList.declarations.map((node: VariableDeclaration) => {
@@ -112,25 +112,11 @@ export function tokenWalk(ret: string[], node: Node, checker: TypeChecker) {
 		ret.push(`export {${names}} from '${relative}';`);
 		// } else if (isImportDeclaration(node) && !isCommentIgnore(node)) { 	// not used import will cause error, and that is no effect
 	} else {
-		nodeComment(ret, node, checker);
+		if (shouldIncludeNode(node)) {
+			nodeComment(ret, node, checker);
+		}
+		
 		// console.log('ignore AST node: %s', SyntaxKind[node.kind]);
-	}
-}
-
-export function nodeComment(ret: string[], node: Node, checker: TypeChecker) {
-	if (isCommentIgnore(node)) {
-		return;
-	}
-	
-	const tags = getJSDocTags(node);
-	if (tags.length) {
-		ret.unshift(tags[0].parent.getFullText());
-		return;
-	}
-	const symb = checker.getSymbolAtLocation((node as any).name);
-	if (symb) {
-		const jsdocs = symb.getDocumentationComment(checker);
-		ret.unshift('/*' + displayPartsToString(jsdocs) + '*/');
 	}
 }
 
@@ -152,15 +138,6 @@ function findingBindingType(node: BindingName): string[] {
 	return ret;
 }
 
-export function isCommentIgnore(node: Node) {
-	for (const item of getJSDocTags(node)) {
-		if (item.tagName && idToString(item.tagName).toLowerCase() === 'internal') {
-			return true;
-		}
-	}
-	return false;
-}
-
 function doExport(ret: string[], node: Node, name: string, file: string) {
 	if (isDefaultExport(node)) {
 		ret.push(`import ${name} from '${file}'; export { ${name} };`);
@@ -178,18 +155,6 @@ function normalizeExportClause(node: ExportDeclaration) {
 		replaced.push(idToString(item.name));
 	}
 	return '{ ' + replaced.join(', ') + ' }';
-}
-
-export function idToString(id: Identifier) {
-	return id.escapedText.toString();
-}
-
-export function nameToString(name: Identifier | StringLiteral) {
-	if (isStringLiteral(name)) {
-		return name.text;
-	} else {
-		return name.escapedText.toString();
-	}
 }
 
 function resolveRelate(fileLiteral: StringLiteral) {

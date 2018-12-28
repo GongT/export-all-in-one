@@ -1,6 +1,6 @@
-import { basename, dirname, resolve } from 'path';
+import { dirname, resolve } from 'path';
 import { CompilerOptions } from 'typescript';
-import { CONFIG_FILE, PROJECT_ROOT } from './argParse';
+import { CONFIG_FILE, DTS_CONFIG_FILE, EXPORT_TEMP_PATH, PROJECT_ROOT } from './argParse';
 import { relativePosix } from './paths';
 import { readJsonSync, writeJsonSyncIfChange } from './writeFile';
 
@@ -12,17 +12,9 @@ export function writeDtsJson(options: CompilerOptions) {
 		console.error(`\x1B[38;5;9mtsconfig.json do not exclude '_export_all_in_once_index.ts' file, this may not work.\x1B[0m`);
 	}
 	
-	const base = basename(CONFIG_FILE);
-	let dtsConfigName = '';
-	if (/\.json$/i.test(base)) {
-		dtsConfigName = base.replace(/\.json$/, '.d.json');
-	} else {
-		dtsConfigName = base + '.d.json';
-	}
-	const dtsConfig = resolve(CONFIG_FILE, '..', '_' + dtsConfigName);
-	writeJsonSyncIfChange(dtsConfig, {
+	writeJsonSyncIfChange(DTS_CONFIG_FILE, {
 		___tabs, ___lastNewLine,
-		extends        : './' + base,
+		extends        : relativePosix(EXPORT_TEMP_PATH, CONFIG_FILE),
 		compilerOptions: {
 			removeComments     : false,
 			declaration        : true,
@@ -35,6 +27,7 @@ export function writeDtsJson(options: CompilerOptions) {
 			noUnusedLocals     : false,
 			strict             : false,
 			alwaysStrict       : false,
+			stripInternal      : true,
 		},
 		exclude        : [],
 		include        : [],
@@ -43,7 +36,7 @@ export function writeDtsJson(options: CompilerOptions) {
 		],
 	});
 	
-	return relativePosix(PROJECT_ROOT, dtsConfig);
+	return relativePosix(PROJECT_ROOT, DTS_CONFIG_FILE);
 }
 
 export function getOutputFilePath(relativeTo: string, options: CompilerOptions) {
