@@ -21,6 +21,7 @@ import { idToString, nameToString } from './util';
 import { getOptions } from './configFile';
 
 const moduleDeclare = /^declare module "(\S+?)" {(.+?)^}/smg;
+const emptyModuleDeclare = /^declare module "(\S+?)" {\s+}/smg;
 // const internalExport = /^\/\*\*.*?@internal.*?\*\/$[\r\n]+^(?:export (?:const|let|var|type) .+?;$|export (?:enum|interface|class) .+?^}$)/smg;
 const importStatements = /^\s*import .+$/mg;
 const multipleEmptyLines = /\n\s*\n\s*\n/g;
@@ -40,15 +41,25 @@ export async function doCompile() {
 	}
 	const imports = await doCompileAfter(outFile);
 	
-	const dts = readFileSync(outFile, 'utf8');
+	const dts = readFileSync(outFile, 'utf8')
+		.replace(emptyModuleDeclare, (m0, name) => {
+			return `// module is empty: ${name}`;
+		});
 	const ms = matchAll(moduleDeclare, dts);
 	
 	ms.pop(); // "_index" itself
 	
 	const dtsNew = ms
-		.map((m) => `// module: ${m[1]}\n${m[2].trim()}`)
+		.map(([m0, name, content]: string[]) => {
+			return content.trim().split(/\n/g).map((line) => {
+				if (line.trim().startsWith('import ')) {
+					return line;
+				} else {
+					return `/*${name.trim()}*/ ${line}`;
+				}
+			}).join('\n');
+		})
 		.join('\n\n')
-		.replace(/^    /mg, '')
 		.replace(importStatements, '')
 		// .replace(internalExport, '')
 		.replace(multipleEmptyLines, '\n\n');
