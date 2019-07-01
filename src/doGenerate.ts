@@ -76,7 +76,7 @@ export async function doGenerate() {
 	patchIgnore('eslintignore');
 	patchIgnore('nodemonignore');
 	
-	const newFileData = sources.filter((item, index, self) => {
+	const newFileData = sources.filter((item, _index, self) => {
 		return self.indexOf(item) === self.lastIndexOf(item);
 	}).join('\n');
 	

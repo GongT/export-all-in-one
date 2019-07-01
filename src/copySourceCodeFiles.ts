@@ -27,7 +27,7 @@ import { idToString } from './util';
 
 const isTsFile = /\.tsx?$/m;
 
-export function copySourceCodeFiles(from: string, to: string) {
+export function copySourceCodeFiles(from: string, _to: string) {
 	// const mapTo = from.replace(SOURCE_ROOT, EXPORT_TEMP_PATH);
 	for (const file of readdirSync(from)) {
 		const path = resolve(from, file);
@@ -50,9 +50,9 @@ function createCommentByComment(node: JSDoc) {
 	lines.push(node.comment);
 	for (const item of node.tags) {
 		let line = '';
-		if (item.atToken) {
-			line += '@';
-		}
+		// if (item.atToken) {
+		// 	line += '@';
+		// }
 		if (item.tagName) {
 			line += idToString(item.tagName);
 		}

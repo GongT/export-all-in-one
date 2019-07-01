@@ -42,7 +42,7 @@ export async function doCompile() {
 	const imports = await doCompileAfter(outFile);
 	
 	const dts = readFileSync(outFile, 'utf8')
-		.replace(emptyModuleDeclare, (m0, name) => {
+		.replace(emptyModuleDeclare, (_m0, name) => {
 			return `// module is empty: ${name}`;
 		});
 	const ms = matchAll(moduleDeclare, dts);
@@ -50,7 +50,7 @@ export async function doCompile() {
 	ms.pop(); // "_index" itself
 	
 	const dtsNew = ms
-		.map(([m0, name, content]: string[]) => {
+		.map(([_m0, name, content]: string[]) => {
 			return content.trim().split(/\n/g).map((line) => {
 				if (line.trim().startsWith('import ')) {
 					return line;
@@ -89,7 +89,7 @@ type ImportDataItem = {name: string, alias?: string, type: ImportType};
 type ImportData = Map<string, ImportDataItem[]>
 
 function visitModule(file: SourceFile, node: Node, importData: ImportData, ignoreModules: string[]) {
-	function addImport(name: string, alias: string, from: string, type: ImportType) {
+	function addImport(name: string, _alias: string, from: string, type: ImportType) {
 		from = from.trim();
 		// console.log(from, '|', from.slice(1, from.length - 1));
 		if (ignoreModules.includes(from.slice(1, from.length - 1))) {

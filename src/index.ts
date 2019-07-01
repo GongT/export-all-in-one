@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 import { doCompile } from './doCompile';
 import { doGenerate } from './doGenerate';
 import { getOptions } from './configFile';

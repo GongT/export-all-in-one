@@ -1,8 +1,7 @@
 .rpt2_cache/
 node_modules/
-jspm_packages/
 *.log
-dist/
+lib/
 *.tgz
 
 .idea/*
