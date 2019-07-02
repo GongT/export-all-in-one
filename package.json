@@ -14,7 +14,7 @@
 		"watch": "tsc -w -p .",
 		"build": "tsc -p . && chmod a+x lib/index.js",
 		"prepare": "tsc -p .",
-		"prepublish": "tsc -p .",
+		"prepublish": "tsc -p . && chmod a+x lib/index.js",
 		"upgrade": "ncu --upgrade --packageFile ./package.json"
 	},
 	"bin": {
