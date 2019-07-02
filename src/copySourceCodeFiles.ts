@@ -20,10 +20,10 @@ import {
 	visitEachChild,
 } from 'typescript';
 import { EXPORT_TEMP_PATH, SOURCE_ROOT } from './argParse';
-import { writeFileSyncIfChange } from './writeFile';
 import { getOptions } from './configFile';
 import { shouldIncludeNode } from './testForExport';
 import { idToString } from './util';
+import { writeFileSyncIfChange } from './writeFile';
 
 const isTsFile = /\.tsx?$/m;
 
@@ -35,7 +35,7 @@ export function copySourceCodeFiles(from: string, _to: string) {
 		const stat = lstatSync(path);
 		if (stat.isFile() || stat.isSymbolicLink()) {
 			if (isTsFile.test(path)) {
-			
+
 			}
 		} else if (stat.isDirectory()) {
 			// mkdirSync(pathTo);
@@ -98,8 +98,8 @@ function visitSourceFile(sourceFile: SourceFile, context: TransformationContext,
 }
 
 export function copyFilteredSourceCodeFile(file: SourceFile, checker: TypeChecker) {
-	const target = resolve(EXPORT_TEMP_PATH, relative(SOURCE_ROOT, file.fileName));
-	
+	const target = resolve(EXPORT_TEMP_PATH, 'extracted-source', relative(SOURCE_ROOT, file.fileName));
+
 	const printer: Printer = createPrinter();
 	const result: TransformationResult<SourceFile> = transform<SourceFile>(
 		file, [context => sourceFile => visitSourceFile(sourceFile, context, checker, prependJSDocComment)], getOptions().options,
@@ -107,7 +107,7 @@ export function copyFilteredSourceCodeFile(file: SourceFile, checker: TypeChecke
 	const transformedSourceFile: SourceFile = result.transformed[0];
 	const newContent = printer.printFile(transformedSourceFile);
 	result.dispose();
-	
+
 	ensureDirSync(dirname(target));
 	writeFileSyncIfChange(target, newContent);
 }

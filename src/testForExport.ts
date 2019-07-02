@@ -4,20 +4,21 @@ import { idToString } from './util';
 export enum ExportType {
 	EXCLUDE_INTERNAL,
 	INCLUDE_EXTERNAL,
-	
+
 	EXCLUDE_IMPLICIT,
+	INCLUDE_IMPLICIT,
 }
 
 export function shouldIncludeNode(node: Node) {
 	const type = checkCommentType(node);
-	return type === ExportType.INCLUDE_EXTERNAL;
+	return type === ExportType.INCLUDE_EXTERNAL || type === ExportType.INCLUDE_IMPLICIT;
 }
 
 export function findMarkerComment() {
 
 }
 
-export function checkCommentType(node: Node) {
+export function checkCommentType(node: Node): ExportType {
 	for (const item of getJSDocTags(node)) {
 		if (item.tagName) {
 			const n = idToString(item.tagName).toLowerCase();
@@ -29,7 +30,7 @@ export function checkCommentType(node: Node) {
 			}
 		}
 	}
-	return ExportType.EXCLUDE_IMPLICIT;
+	return ExportType.INCLUDE_IMPLICIT;
 }
 
 export function nodeComment(ret: string[], node: Node, checker: TypeChecker) {
