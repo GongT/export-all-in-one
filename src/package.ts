@@ -1,12 +1,12 @@
 import { existsSync } from 'fs';
 import { dirname, resolve } from 'path';
 import { CONFIG_FILE } from './argParse';
-import { readJsonSync, writeJsonSyncIfChange } from './writeFile';
+import { readJsonSync } from './writeFile';
 
 export interface IMyPackageJson {
 	[key: string]: any;
-	
-	scripts: {[key: string]: string};
+
+	scripts: { [key: string]: string };
 }
 
 let pathCache: string;
@@ -29,8 +29,4 @@ export function projectPackagePath() {
 
 export function projectPackage(): IMyPackageJson {
 	return readJsonSync(projectPackagePath());
-}
-
-export function rewritePackage(data: IMyPackageJson) {
-	writeJsonSyncIfChange(projectPackagePath(), data);
 }

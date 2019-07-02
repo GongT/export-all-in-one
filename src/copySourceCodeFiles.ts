@@ -1,4 +1,4 @@
-import { ensureDirSync, lstatSync, readdirSync } from 'fs-extra';
+import { ensureDirSync } from 'fs-extra';
 import { dirname, relative, resolve } from 'path';
 import {
 	addSyntheticLeadingComment,
@@ -24,24 +24,6 @@ import { getOptions } from './configFile';
 import { shouldIncludeNode } from './testForExport';
 import { idToString } from './util';
 import { writeFileSyncIfChange } from './writeFile';
-
-const isTsFile = /\.tsx?$/m;
-
-export function copySourceCodeFiles(from: string, _to: string) {
-	// const mapTo = from.replace(SOURCE_ROOT, EXPORT_TEMP_PATH);
-	for (const file of readdirSync(from)) {
-		const path = resolve(from, file);
-		// const pathTo = resolve(mapTo, file);
-		const stat = lstatSync(path);
-		if (stat.isFile() || stat.isSymbolicLink()) {
-			if (isTsFile.test(path)) {
-
-			}
-		} else if (stat.isDirectory()) {
-			// mkdirSync(pathTo);
-		}
-	}
-}
 
 const internalHint = '\n * @internal\n';
 

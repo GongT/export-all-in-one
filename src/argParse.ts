@@ -1,6 +1,7 @@
 ///<reference types="node"/>
 
 import { existsSync, lstatSync } from 'fs';
+import { platform, tmpdir } from 'os';
 import { dirname, resolve } from 'path';
 import { relativePosix } from './paths';
 
@@ -40,7 +41,16 @@ while (itr !== '/') {
 export const PROJECT_ROOT = resolve(itr);
 export const CONFIG_FILE_REL = relativePosix(itr, CONFIG_FILE);
 
-export const TEMP_DIR_NAME = '.export-all-in-one';
-export const EXPORT_TEMP_PATH = resolve(PROJECT_ROOT, TEMP_DIR_NAME);
+function getTemp() {
+	if (process.env.RUSH_TEMP_FOLDER) {
+		return process.env.RUSH_TEMP_FOLDER;
+	} else {
+		return tmpdir();
+	}
+}
+
+export const EXPORT_TEMP_PATH = resolve(getTemp(), '.export-all-in-one');
 export const DTS_CONFIG_FILE = resolve(EXPORT_TEMP_PATH, 'tsconfig.json');
 export const API_CONFIG_FILE = resolve(EXPORT_TEMP_PATH, 'api-extractor.json');
+
+export const IS_WINDOWS = platform() === 'win32';

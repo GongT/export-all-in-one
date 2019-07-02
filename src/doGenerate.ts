@@ -1,15 +1,14 @@
-import { emptyDirSync, existsSync, unlinkSync, writeFileSync } from 'fs-extra';
+import { copyFile, emptyDirSync, existsSync, unlinkSync, writeFileSync } from 'fs-extra';
 import { basename, dirname, resolve } from 'path';
 import { createCompilerHost, createProgram, forEachChild, Node, Program, SourceFile } from 'typescript';
 import { processString } from 'typescript-formatter';
 import { rewriteApiExtractorConfig } from './apiExtractor';
-import { CONFIG_FILE, EXPORT_TEMP_PATH, SOURCE_ROOT } from './argParse';
+import { CONFIG_FILE, EXPORT_TEMP_PATH } from './argParse';
 import { getOptions } from './configFile';
-import { copyFilteredSourceCodeFile, copySourceCodeFiles } from './copySourceCodeFiles';
+import { copyFilteredSourceCodeFile } from './copySourceCodeFiles';
 import { writeDtsJson } from './dts';
 import { filterIgnoreFiles, isFileIgnored } from './filterIgnoreFiles';
-import { patchIgnore } from './ignoreFile';
-import { projectPackage } from './package';
+import { projectPackagePath } from './package';
 import { relativeToRoot, tokenWalk } from './tokenWalk';
 
 export async function doGenerate() {
@@ -54,12 +53,7 @@ export async function doGenerate() {
 			sources.push(...fileSources);
 		}
 	}
-
 	console.log('\x1B[K\x1B[38;5;10mtypescript program created!\x1B[0m');
-	const packageJson = projectPackage();
-	if (!packageJson.scripts) {
-		packageJson.scripts = {};
-	}
 
 	console.log('\x1B[38;5;10mwrite tsconfig.json...\x1B[0m');
 	/*const dtsConfigOptionsFile = */
@@ -68,18 +62,8 @@ export async function doGenerate() {
 	console.log('\x1B[38;5;10mwrite api-extractor.json...\x1B[0m');
 	rewriteApiExtractorConfig();
 
-	/*
-	console.log('\x1B[38;5;10mupdate package.json scripts...\x1B[0m');
-	packageJson.typings = getOutputFilePath(dirname(projectPackagePath()), command.options) + '.d.ts';
-	// packageJson.scripts['build:exports'] = `export-all-in-one "${CONFIG_FILE_REL}" && export-all-in-one -c "${dtsConfigOptionsFile}"`;
-	rewritePackage(packageJson);
-	*/
-
-	patchIgnore('npmignore');
-	patchIgnore('gitignore');
-	patchIgnore('dockerignore');
-	patchIgnore('eslintignore');
-	patchIgnore('nodemonignore');
+	console.log('\x1B[38;5;10mcopy package.json...\x1B[0m');
+	await copyFile(projectPackagePath(), resolve(EXPORT_TEMP_PATH, 'package.json'));
 
 	const newFileData = sources.filter((item, _index, self) => {
 		return self.indexOf(item) === self.lastIndexOf(item);
@@ -92,8 +76,6 @@ export async function doGenerate() {
 
 	writeFileSync(targetIndexFile, newFileData, 'utf8');
 	console.log('\x1B[38;5;10mformatting _export_all_in_once_index.ts...\x1B[0m');
-
-	copySourceCodeFiles(SOURCE_ROOT, EXPORT_TEMP_PATH);
 
 	return processString(targetIndexFile, newFileData, {
 		verify: false,

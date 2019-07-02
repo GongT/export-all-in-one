@@ -1,4 +1,4 @@
-import { API_CONFIG_FILE } from './argParse';
+import { API_CONFIG_FILE, PROJECT_ROOT } from './argParse';
 import { writeJsonSyncIfChange } from './writeFile';
 
 const apiExtractorJson = {
@@ -13,7 +13,7 @@ const apiExtractorJson = {
 	apiReport: {
 		enabled: true,
 		// "reportFileName": "<unscopedPackageName>.api.md",
-		reportFolder: '<projectFolder>/../doc/',
+		reportFolder: PROJECT_ROOT + '/doc/',
 		// "reportTempFolder": "<projectFolder>/temp/"
 	},
 	docModel: {
@@ -24,12 +24,12 @@ const apiExtractorJson = {
 		enabled: true,
 		// "untrimmedFilePath": "<projectFolder>/dist/<unscopedPackageName>.d.ts",
 		// "betaTrimmedFilePath": "<projectFolder>/dist/<unscopedPackageName>-beta.d.ts",
-		publicTrimmedFilePath: '<projectFolder>/../doc/package-public.d.ts',
+		publicTrimmedFilePath: PROJECT_ROOT + '/doc/package-public.d.ts',
 		omitTrimmingComments: false,
 	},
 	tsdocMetadata: {
 		enabled: true,
-		tsdocMetadataFilePath: '<projectFolder>/../doc/tsdoc-metadata.json',
+		tsdocMetadataFilePath: PROJECT_ROOT + '/doc/tsdoc-metadata.json',
 	},
 	messages: {
 		compilerMessageReporting: {
